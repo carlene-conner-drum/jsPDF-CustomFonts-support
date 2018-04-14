@@ -4,14 +4,18 @@
 <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>jsPDF customfonts example</title>
-    <script language="javascript" type="text/javascript" src="./dist/jspdf.customfonts.min.js"></script>
-    <script language="javascript" type="text/javascript" src="./dist/default_vfs.js"></script>
+    <script language="javascript" type="text/javascript" src="https://rawgit.com/MrRio/jsPDF/master/jspdf.js"></script>
+    <script language="javascript" type="text/javascript" src="plugins/split_text_to_size.js"></script>
+    <script language="javascript" type="text/javascript" src="plugins/customfonts.js"></script>
+    <script language="javascript" type="text/javascript" src="plugins/vfs.js"></script>
+
+    <script language="javascript" type="text/javascript" src="node_modules/file-saver/fileSaver.js"></script>
+    <script language="javascript" type="text/javascript" src="dist/default_vfs.js"></script>
 </head>
 
 <body>
     <script>
         var doc = new jsPDF();
-    
         doc.addFont('Batang.ttf', 'Batang', 'normal');
         doc.addFont('NotoSansCJKjp-Regular.ttf', 'NotoSansCJKjp', 'normal');
         doc.addFont('NotoSansCJKtc-Regular.ttf', 'NotoSansCJKtc', 'normal');

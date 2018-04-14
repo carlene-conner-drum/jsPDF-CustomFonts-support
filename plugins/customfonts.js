@@ -148,33 +148,30 @@
             @param {Object} dictionary
             @returns {Number} objectNumber
             */
-            function makeFontTable(data) {
+            function makeFontTable(dictionary) {
                 var tableNumber;
-                if (data.Type === "Font") {
-                    if (isHex) data.ToUnicode = makeFontTable(data.ToUnicode) + ' 0 R';
-                    data.FontDescriptor = makeFontTable(data.FontDescriptor) + ' 0 R';
+                if (dictionary.Type === "Font") {
+                    dictionary.ToUnicode = makeFontTable(dictionary.ToUnicode) + ' 0 R';
+                    dictionary.FontDescriptor = makeFontTable(dictionary.FontDescriptor) + ' 0 R';
                     tableNumber = newObject();
-                    out(PDFObject.convert(data));
-                } else if (data.Type === "FontDescriptor") {
-                    data.FontFile2 = makeFontTable(data.FontFile2) + ' 0 R';
+                    out(PDFObject.convert(dictionary));
+                } else if (dictionary.Type === "FontDescriptor") {
+                    dictionary.FontFile2 = makeFontTable(dictionary.FontFile2) + ' 0 R';
                     tableNumber = newObject();
-                    out(PDFObject.convert(data));
+                    out(PDFObject.convert(dictionary));
                 } else {
                     tableNumber = newObject();
-                    out('<</Length1 ' + data.length + '>>');
+                    out('<</Length1 ' + dictionary.length + '>>');
                     out('stream');
-                    (Array.isArray(data) || data.constructor === Uint8Array) ? out(toString(data)): out(data)
+                    (Array.isArray(dictionary) || dictionary.constructor === Uint8Array) ? out(toString(dictionary)): out(dictionary)
                     out('endstream');
                 }
                 out('endobj');
                 return tableNumber;
             }
 
-            var charWidths, cmap, code, data, descriptor, firstChar, fontfile, glyph;
-            var isHex = encoding === 'MacRomanEncoding' ? true : false;
-            data = this.subset.encode();
-            fontfile = {};
-            fontfile = isHex ? data : this.rawData;
+            var charWidths, cmap, code, descriptor, firstChar, fontfile, glyph;
+            fontfile = this.subset.encode();
             descriptor = {
                 Type: 'FontDescriptor',
                 FontName: this.subset.postscriptName,
@@ -189,8 +186,7 @@
                 XHeight: this.xHeight
             };
             firstChar = +Object.keys(this.subset.cmap)[0];
-            if (firstChar !== 33 && isHex)
-                return false;
+            if (firstChar !== 33) return false;
             charWidths = (function () {
                 var _ref, _results;
                 _ref = this.subset.cmap;
@@ -204,7 +200,7 @@
                 return _results;
             }).call(this);
             cmap = toUnicodeCmap(this.subset.subset);
-            var dictionary = isHex ? {
+            var dictionary = {
                 Type: 'Font',
                 BaseFont: this.subset.postscriptName,
                 Subtype: 'TrueType',
@@ -214,15 +210,6 @@
                 Widths: charWidths,
                 Encoding: encoding,
                 ToUnicode: cmap
-            } : {
-                Type: 'Font',
-                BaseFont: this.subset.postscriptName,
-                Subtype: 'TrueType',
-                FontDescriptor: descriptor,
-                FirstChar: 0,
-                LastChar: 255,
-                Widths: makeWidths(this),
-                Encoding: encoding
             };
             return makeFontTable(dictionary);
         };
@@ -291,55 +278,6 @@
             return strings.join('');
         };
 
-        var makeWidths = function (font) {
-            var widths = [];
-            for (var i = 0; i < 256; i++) {
-                widths[i] = 0;
-            }
-            var scale = 1000.0 / font.head.unitsPerEm;
-            var codeMap = font.cmap.unicode.codeMap;
-            var WinAnsiEncoding = {
-                402: 131,
-                8211: 150,
-                8212: 151,
-                8216: 145,
-                8217: 146,
-                8218: 130,
-                8220: 147,
-                8221: 148,
-                8222: 132,
-                8224: 134,
-                8225: 135,
-                8226: 149,
-                8230: 133,
-                8364: 128,
-                8240: 137,
-                8249: 139,
-                8250: 155,
-                710: 136,
-                8482: 153,
-                338: 140,
-                339: 156,
-                732: 152,
-                352: 138,
-                353: 154,
-                376: 159,
-                381: 142,
-                382: 158
-            };
-
-            Object.keys(codeMap).map(function (key) {
-                var WinAnsiEncodingValue = WinAnsiEncoding[key];
-                var AssignedValue = Math.round(font.hmtx.metrics[codeMap[key]].advance * scale);
-                if (WinAnsiEncodingValue) {
-                    widths[WinAnsiEncodingValue] = AssignedValue;
-                } else if (key < 256) {
-                    widths[key] = AssignedValue;
-                }
-            });
-            return widths;
-        };
-
         var toUnicodeCmap = function (map) {
             var code, codes, range, unicode, unicodeMap, _i, _len;
             unicodeMap = '/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo <<\n  /Registry (Adobe)\n  /Ordering (UCS)\n  /Supplement 0\n>> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<00><ff>\nendcodespacerange';
@@ -349,10 +287,10 @@
             range = [];
             for (_i = 0, _len = codes.length; _i < _len; _i++) {
                 code = codes[_i];
-                if (range.length >= 100) {
-                    unicodeMap += "\n" + range.length + " beginbfchar\n" + (range.join('\n')) + "\nendbfchar";
-                    range = [];
-                }
+                // if (range.length >= 100) {
+                //     unicodeMap += "\n" + range.length + " beginbfchar\n" + (range.join('\n')) + "\nendbfchar";
+                //     range = [];
+                // }
                 unicode = ('0000' + map[code].toString(16)).slice(-4);
                 code = (+code).toString(16);
                 range.push("<" + code + "><" + unicode + ">");
@@ -1991,15 +1929,56 @@
 
     })();
 
-    jsPDFAPI.events.push([
-        'addFont',
-        function (font) {
+    jsPDFAPI.events.push(['addFont',function (font) {
+        if(font.id.slice(1) < 15) return;
+
             if (jsPDFAPI.existsFileInVFS(font.postScriptName)) {
                 font.metadata = TTFFont.open(font.postScriptName, font.fontName, jsPDFAPI.getFileFromVFS(font.postScriptName), font.encoding);
-                font.encoding = (font.metadata.hmtx.widths.length < 500 && font.metadata.capHeight < 800) ? "WinAnsiEncoding" : "MacRomanEncoding";
-            } else if (font.id.slice(1) >= 14) {
+                font.encoding = "MacRomanEncoding";
+            } else if (font.id.slice(1) >= 15) {
                 console.error("Font does not exist in FileInVFS, import fonts or remove declaration doc.addFont('" + font.postScriptName + "').");
             }
         }
     ]);
+
+    
+    var macRomanEncodingFunction = function (font, newObject, out) {
+        if(font.id.slice(1) < 15) return;
+
+        var dictionary = font.metadata.embedTTF(font.encoding, newObject, out);
+        dictionary ? font.objectNumber = dictionary : delete fonts[font.id];
+        font.isAlreadyPutted = true;
+    }
+
+    jsPDFAPI.events.push(['putFont', function (args) {
+        macRomanEncodingFunction(args.font,args.newObject, args.out);
+    }]);
+
+    var utf8EscapeFunction = function (parms) {
+        var text = parms.text;
+        var x = parms.y;
+        var y = parms.y;
+        var activeFontKey = parms.mutex.activeFontKey;
+        var activeFontSize = parms.mutex.activeFontSize;
+        var fonts = parms.mutex.fonts;
+
+        var utfText = [];
+        var len = text.length;
+        var activeFont = fonts[activeFontKey];
+        var isHex = activeFont.encoding === "MacRomanEncoding";
+        // we do array.join('text that must not be PDFescaped") thus, pdfEscape each
+        // component separately
+
+        while (len--) {
+            utfText.push(isHex ? activeFont.metadata.encode(activeFont.metadata.subset, text.shift()) : ESC(text.shift()));
+        }
+
+
+        parms.text = utfText;
+        parms.mutex.isHex = isHex;
+        font.isAlreadyPutted = true;
+    }
+
+    jsPDFAPI.events.push(['postProcessText', utf8EscapeFunction]);
+
 })(jsPDF.API);
