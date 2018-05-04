@@ -1976,7 +1976,6 @@
 
         parms.text = utfText;
         parms.mutex.isHex = isHex;
-        font.isAlreadyPutted = true;
     }
 
     jsPDFAPI.events.push(['postProcessText', utf8EscapeFunction]);

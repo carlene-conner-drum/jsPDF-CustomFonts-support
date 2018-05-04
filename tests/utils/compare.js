@@ -1,55 +1,60 @@
 /* global XMLHttpRequest, expect */
-
-function loadBinaryResource(url, unicodeCleanUp) {
+var globalVar = (typeof self !== "undefined" && self || typeof global !== "undefined" && global || typeof window !== "undefined" && window || (Function ("return this"))());
+function loadBinaryResource (url) {
   const req = new XMLHttpRequest()
-  req.open('GET', url, false)
-  // XHR binary charset opt by Marcus Granado 2006 [http://mgran.blogspot.com]
+  req.open('GET', url, false);
+   // XHR binary charset opt by Marcus Granado 2006 [http://mgran.blogspot.com]
   req.overrideMimeType('text\/plain; charset=x-user-defined');
-  req.send(null)
+  req.send(null);
   if (req.status !== 200) {
-    throw new Error('Unable to load file')
+    throw new Error('Unable to load file');
   }
-  let responseText = req.responseText;
-  let StringFromCharCode = String.fromCharCode;
-  if (unicodeCleanUp === true) {
-    for (let i = 0, responseTextLen = responseText.length; i < responseTextLen; i += 1) {
-      byteArray.push(StringFromCharCode(responseText.charCodeAt(i) & 0xff))
-    }
-    return byteArray.join("");
-  }
+
+  var responseText = req.responseText;
+  var responseTextLen = req.responseText.length;
   return responseText;
 }
 
-function sendReference(filename, data) {
-  const req = new XMLHttpRequest()
-  req.open('POST', `http://localhost:9090/${filename}`, true)
-  req.onload = e => {
-    console.log(e)
-  }
-  req.send(data)
+function cleanUpUnicode(value) {
+    var i = 0;
+    var byteArray = [];
+	var StringFromCharCode = String.fromCharCode;
+    for (i = 0; i < value.length; i += 1) {
+      byteArray.push(StringFromCharCode(value.charCodeAt(i) & 0xff))
+    }
+	return byteArray.join("");
 }
 
-const resetCreationDate = input =>
-  input.replace(
-    /\/CreationDate \(D:(.*?)\)/,
-    '/CreationDate (D:19871210000000+00\'00\'\)'
-  )
+function sendReference (filename, data) {
+  var req = new XMLHttpRequest();
+  req.open('POST', 'http://localhost:9090/'+filename, true);
+  req.send(data);
+}
 
+function resetFile(pdfFile) {
+  pdfFile = pdfFile.replace(/\/CreationDate \(D:(.*?)\)/, '/CreationDate (D:19871210000000+00\'00\'\)');
+  pdfFile = pdfFile.replace(/(\/ID \[ (<[0-9a-fA-F]+> ){2}\])/, '/ID [ <00000000000000000000000000000000> <00000000000000000000000000000000> ]');
+  pdfFile = pdfFile.replace(/(\/Producer \(jsPDF [1-9].[0-9].[0-9]\))/, '/Producer (jsPDF 1.0.0)');
+  return pdfFile;
+}
 /**
  * Find a better way to set this
  * @type {Boolean}
  */
-window.comparePdf = (actual, expectedFile, suite, unicodeCleanUp) => {
-  let pdf;
-  unicodeCleanUp = unicodeCleanUp || true;
+globalVar.comparePdf = function (actual, expectedFile, suite, unicodeCleanUp) {
+  var unicodeCleanUp = unicodeCleanUp || true;
+  var pdf;
+  actual = actual || 'File not loaded.';
+  
   try {
-    pdf = loadBinaryResource(`/base/tests/${suite}/reference/${expectedFile}`, unicodeCleanUp)
+    pdf = loadBinaryResource('/base/tests/' + suite + '/reference/' + expectedFile, unicodeCleanUp);
   } catch (error) {
-    sendReference(`/tests/${suite}/reference/${expectedFile}`, resetCreationDate(actual))
-    pdf = actual
+    console.log("Error loading '/base/tests/" + suite + "/reference/" + expectedFile + "'");
+    sendReference('/tests/${suite}/reference/' + expectedFile, resetFile(actual))
+    pdf = actual;
   }
-  const expected = resetCreationDate(pdf).trim()
-  actual = resetCreationDate(actual.trim())
-
+  var expected = cleanUpUnicode(resetFile(pdf.trim()));	
+  actual = cleanUpUnicode(resetFile(actual.trim()));
+	
   expect(actual).toEqual(expected)
 }

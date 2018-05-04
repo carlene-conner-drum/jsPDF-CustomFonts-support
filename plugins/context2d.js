@@ -132,7 +132,7 @@
             // get the decimal values of r, g, and b;
             var r, g, b, a;
             if (!style) {
-                return {r: 0, g: 0, b: 0, a: 0, style};
+                return {r: 0, g: 0, b: 0, a: 0, style: style};
             }
 
             if (this.internal.rxTransparent.test(style)) {
@@ -162,7 +162,6 @@
                             if (!style) {
                                 style = '#000000';
                             }
-                        } else {
                         }
 
                         if (style.length === 4) {
@@ -183,7 +182,7 @@
                     }
                 }
             }
-            return {r, g, b, a, style};
+            return {r: r, g: g, b: b, a: a, style: style};
         },
 
         setFillStyle: function (style) {
@@ -260,7 +259,7 @@
             }
 
             // In some cases the transform was very small (5.715760606202283e-17).  Most likely a canvg rounding error.
-            if (scale < .01) {
+            if (scale < 0.01) {
                 this.pdf.text(text, x, this._getBaseline(y), null, degs);
             }
             else {
@@ -1125,7 +1124,9 @@
 
                 if (moves[i].close) {
                     this.pdf.internal.out('h');
-                    this.pdf.internal.out('f');
+                    if (style) { // only fill at final path move
+                        this.pdf.internal.out(style);
+                    }
                 }
                 else if (moves[i].arc) {
                     if (moves[i].start) {
@@ -1232,7 +1233,7 @@
         _getBaseline: function (y) {
             var height = parseInt(this.pdf.internal.getFontSize());
             // TODO Get descent from font descriptor
-            var descent = height * .25;
+            var descent = height * 0.25;
             switch (this.ctx.textBaseline) {
                 case 'bottom':
                     return y - descent;
@@ -1366,7 +1367,7 @@
         var includeMove = true;
 
         var k = this.pdf.internal.scaleFactor;
-        var pageHeight = this.pdf.internal.pageSize.height;
+        var pageHeight = this.pdf.internal.pageSize.getHeight();
         var f2 = this.pdf.internal.f2;
 
         var a1r = a1 * (Math.PI / 180);
@@ -1442,7 +1443,7 @@
             end = c2d._matrix_map_point_obj(matrix, end);
 
             var k = this.pdf.internal.scaleFactor;
-            var pageHeight = this.pdf.internal.pageSize.height;
+            var pageHeight = this.pdf.internal.pageSize.getHeight();
             var f2 = this.pdf.internal.f2;
             this.pdf.internal.out([
                 f2((start.x) * k), f2((pageHeight - (start.y)) * k), 'm', f2((pt1.x) * k), f2((pageHeight - (pt1.y)) * k), f2((pt2.x) * k), f2((pageHeight - (pt2.y)) * k), f2((end.x) * k), f2((pageHeight - (end.y)) * k), 'c'
@@ -1462,7 +1463,7 @@
 
     c2d.internal.move2 = function (c2d, x, y) {
         var k = this.pdf.internal.scaleFactor;
-        var pageHeight = this.pdf.internal.pageSize.height;
+        var pageHeight = this.pdf.internal.pageSize.getHeight();
         var f2 = this.pdf.internal.f2;
 
         this.pdf.internal.out([
@@ -1473,7 +1474,7 @@
 
     c2d.internal.line2 = function (c2d, dx, dy) {
         var k = this.pdf.internal.scaleFactor;
-        var pageHeight = this.pdf.internal.pageSize.height;
+        var pageHeight = this.pdf.internal.pageSize.getHeight();
         var f2 = this.pdf.internal.f2;
 
         //var pt = {x: c2d._lastPoint.x + dx, y: c2d._lastPoint.y + dy};

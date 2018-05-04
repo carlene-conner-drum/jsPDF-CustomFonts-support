@@ -8,20 +8,16 @@
  */
 
 describe('jsPDF init options', () => {
-  /**
-   * @TODO: this document doesn't work, needs fixing, see #881
-   */
-  it('should make a compressed document', () => {
+  xit('should make a compressed document', () => {
     const doc = jsPDF({
       compress: true
     })
     doc.text(10, 10, 'This is a test')
-    doc.output()
-    // comparePdf(doc.output(), 'compress.pdf', 'init')
+    comparePdf(doc.output(), 'compress.pdf', 'init')
   })
 
   // @TODO: Make sure this is what we want
-  it('should silently fail compressing when adler32cs is not present', () => {
+  xit('should silently fail compressing when adler32cs is not present', () => {
     delete window.adler32cs
     const doc = jsPDF({
       compress: true
@@ -50,9 +46,6 @@ describe('jsPDF init options', () => {
     comparePdf(doc.output(), 'properties.pdf', 'init')
   })
 
-  /**
-   * @TODO: Fix 'undefined' see #882
-   */
   it('should return font list', () => {
     const doc = jsPDF()
     const fontList = doc.getFontList()
@@ -63,8 +56,10 @@ describe('jsPDF init options', () => {
       Courier: ['', 'Bold', 'Oblique', 'BoldOblique'],
       times: ['normal', 'bold', 'italic', 'bolditalic'],
       Times: ['Roman', 'Bold', 'Italic', 'BoldItalic'],
-      zapfdingbats: ['undefined'],
-      ZapfDingbats: ['']
+      zapfdingbats: ['normal'],
+      ZapfDingbats: [''],
+      symbol: ['normal'],
+      Symbol: ['']
     })
   })
 
@@ -182,4 +177,29 @@ describe('jsPDF init options', () => {
       jsPDF('portrait', 'invalid')
     }).toThrow('Invalid unit: invalid')
   })
+  
+  it('getCreationDate', () => {
+    const doc = jsPDF('portrait', 'cm');
+    var creationDate = new Date();
+    doc.setCreationDate(creationDate);
+    expect(doc.getCreationDate("jsDate").getFullYear()).toEqual(creationDate.getFullYear());
+    expect(doc.getCreationDate("jsDate").getMonth()).toEqual(creationDate.getMonth());
+    expect(doc.getCreationDate("jsDate").getDate()).toEqual(creationDate.getDate());
+    expect(doc.getCreationDate("jsDate").getHours()).toEqual(creationDate.getHours());
+    expect(doc.getCreationDate("jsDate").getMinutes()).toEqual(creationDate.getMinutes());
+    expect(doc.getCreationDate("jsDate").getSeconds()).toEqual(creationDate.getSeconds());
+  });
+  
+  it('setCreationDate', () => {
+    const doc = jsPDF('portrait', 'cm');
+    var creationDate = new Date(1987,11,10,0,0,0);
+    var pdfDateString = "D:19871210000000+00'00'";
+    doc.setCreationDate(pdfDateString);
+    expect(doc.getCreationDate("jsDate").getFullYear()).toEqual(creationDate.getFullYear());
+    expect(doc.getCreationDate("jsDate").getMonth()).toEqual(creationDate.getMonth());
+    expect(doc.getCreationDate("jsDate").getDate()).toEqual(creationDate.getDate());
+    expect(doc.getCreationDate("jsDate").getHours()).toEqual(creationDate.getHours());
+    expect(doc.getCreationDate("jsDate").getMinutes()).toEqual(creationDate.getMinutes());
+    expect(doc.getCreationDate("jsDate").getSeconds()).toEqual(creationDate.getSeconds());
+  });
 })

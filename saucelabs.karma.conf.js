@@ -3,35 +3,34 @@ const yaml = require('js-yaml')
 const fs = require('fs')
 
 const browsers = {
-  sl_chrome: {
-    base: 'SauceLabs',
-    browserName: 'chrome',
-    platform: 'Windows 10',
-    version: '59.0'
-  },
-  sl_firefox: {
-    base: 'SauceLabs',
-    browserName: 'firefox',
-    platform: 'macOS 10.12',
-    version: '54.0'
-  },
-  sl_safari: {
-    base: 'SauceLabs',
-    browserName: 'safari',
-    platform: 'macOS 10.12',
-    version: '11.0'
-  },
   sl_ie_11: {
     base: 'SauceLabs',
     browserName: 'internet explorer',
     platform: 'Windows 10',
-    version: '11.0'
+    version: '11'
+  },
+  sl_chrome: {
+    base: 'SauceLabs',
+    browserName: 'chrome',
+    platform: 'Windows 10',
+    version: '53'
+  },
+  sl_firefox: {
+    base: 'SauceLabs',
+    browserName: 'firefox',
+    version: '49'
+  },
+  sl_safari: {
+    base: 'SauceLabs',
+    browserName: 'safari',
+    platform: 'Windows 10',
+    version: '11'
   },
   sl_edge_14: {
     base: 'SauceLabs',
     browserName: 'MicrosoftEdge',
     platform: 'Windows 10',
-    version: '15.15063'
+    version: '15'
   }
 }
 
@@ -60,21 +59,21 @@ module.exports = (config) => {
     // list of files / patterns to load in the browser
     // @TODO: Make this the same across both configs
     files: [
+      'libs/polyfill.js',
       'jspdf.js',
-      'plugins/acroform.js',
-      'plugins/annotations.js',
-      'plugins/split_text_to_size.js',
-      'plugins/standard_fonts_metrics.js',
-      'plugins/customfonts.js',
-      'plugins/vfs.js',
-      'plugins/autoprint.js',
-      'plugins/addhtml.js',
+      {
+        pattern: 'plugins/*.js',
+        included: true
+      },      
+      'libs/Deflater.js',   
+      'libs/png_support/png.js',
+      'libs/png_support/zlib.js',
       'tests/utils/compare.js',
       {
         pattern: 'tests/**/*.spec.js',
         included: true
       }, {
-        pattern: 'tests/**/reference/*.*',
+        pattern: 'tests/**/reference/*.pdf',
         included: false,
         served: true
       }
@@ -87,8 +86,12 @@ module.exports = (config) => {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'jspdf.js': 'coverage',
-      'plugins/*.js': 'coverage',
-      'tests/!(acroform)*/*.js': 'babel'
+      'plugins/*.js': 'coverage',      
+      'libs/polyfill.js': 'coverage',
+      'libs/Deflater.js': 'coverage',
+      'libs/png_support/png.js': 'coverage',
+      'libs/png_support/zlib.js': 'coverage',
+      'tests/!(acroform|unicode)*/*.js': 'babel'
     },
 
     // web server port
@@ -99,7 +102,7 @@ module.exports = (config) => {
 
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-    logLevel: config.LOG_INFO,
+    logLevel: config.DEBUG,
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
@@ -115,7 +118,7 @@ module.exports = (config) => {
     browserNoActivityTimeout: 60000,
     captureTimeout: 120000,
 
-    reporters: ['saucelabs', 'progress', 'mocha', 'coverage'], // 2
+    reporters: ['saucelabs', 'progress', 'coverage', 'mocha', 'verbose'], // 2
     browsers: Object.keys(browsers), // 3
     customLaunchers: browsers, // 4
 
